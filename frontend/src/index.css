@@ -36,3 +36,16 @@ input { padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-
 .btn:disabled { opacity: .5; cursor: not-allowed; }
 .exito { background: #d1fae5; color: #065f46; padding: 10px 14px; border-radius: 8px; margin-bottom: 16px; }
 @media (max-width: 900px) { .ventas-grid { grid-template-columns: 1fr; } }
+
+
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 20px; }
+.stat { background: #fff; border-radius: 12px; padding: 20px; box-shadow: 0 1px 4px rgba(0,0,0,.08); display: flex; flex-direction: column; gap: 6px; color: #64748b; }
+.stat-num { font-size: 1.8rem; font-weight: 700; color: #1f2937; }
+.stat-alerta { background: #fef2f2; }
+.stat-alerta .stat-num { color: #b91c1c; }
+.card h2 { font-size: 1.1rem; margin-bottom: 12px; }
+.lista-simple { list-style: none; margin-bottom: 12px; }
+.lista-simple li { padding: 8px 0; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; }
+.alertas-lista { display: flex; flex-direction: column; gap: 10px; }
+.alerta { display: flex; justify-content: space-between; align-items: center; gap: 16px; background: #fff; border-left: 5px solid #dc2626; border-radius: 10px; padding: 14px 18px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+.alerta-datos { display: flex; gap: 20px; font-size: .9rem; flex-wrap: wrap; }
