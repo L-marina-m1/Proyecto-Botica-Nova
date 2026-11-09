@@ -35,3 +35,10 @@ export async function eliminarProducto(id) {
   }
   await api.delete(`/productos/${id}`)
 }
+
+export function descontarStockMock(items) {
+  mock = mock.map((p) => {
+    const item = items.find((i) => i.id === p.id)
+    return item ? { ...p, stock: p.stock - item.cantidad } : p
+  })
+}
