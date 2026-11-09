@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { iniciarSesion } from '../services/authService'
+import logo from '../assets/logo.png'
 
 export default function Login() {
   const [usuario, setUsuario] = useState('')
@@ -26,6 +27,7 @@ export default function Login() {
   return (
     <div className="login-fondo">
       <form className="login-caja" onSubmit={enviar}>
+        <img src={logo} alt="Logo Nova Salud" className="login-logo" />
         <h1>Nova Salud</h1>
         <p className="detalle">Sistema de inventario y ventas</p>
 
