@@ -1,23 +1,10 @@
 import api from './api'
 
-// true = datos de prueba | false = backend real de Josue
-const USE_MOCK = true
 const CLAVE_SESION = 'novasalud_sesion'
 
-export async function iniciarSesion(usuario, clave) {
-  let sesion
-
-  if (USE_MOCK) {
-    // Credenciales SOLO de prueba
-    if (usuario !== 'admin' || clave !== 'admin123') {
-      throw new Error('Usuario o contraseña incorrectos')
-    }
-    sesion = { token: 'token-de-prueba', usuario: { nombre: 'Administrador' } }
-  } else {
-    const { data } = await api.post('/auth/login', { usuario, clave })
-    sesion = { token: data.token, usuario: data.usuario || { nombre: usuario } }
-  }
-
+export async function iniciarSesion(email, password) {
+  const { data } = await api.post('/auth/login', { email, password })
+  const sesion = { token: data.token, usuario: data.usuario }
   localStorage.setItem(CLAVE_SESION, JSON.stringify(sesion))
   return sesion
 }
@@ -28,6 +15,10 @@ export function obtenerSesion() {
   } catch {
     return null
   }
+}
+
+export function esAdmin() {
+  return obtenerSesion()?.usuario?.rol === 'admin'
 }
 
 export function cerrarSesion() {

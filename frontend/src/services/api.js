@@ -29,4 +29,17 @@ api.interceptors.response.use(
   },
 )
 
+// Convierte un error de axios en un mensaje legible para el usuario
+export function mensajeError(error, porDefecto) {
+  if (error.response) {
+    const d = error.response.data
+    if (d?.detalles?.length) {
+      return `${d.mensaje}: ${d.detalles.map((x) => x.mensaje).join(', ')}`
+    }
+    return d?.mensaje || porDefecto
+  }
+  if (error.request) return 'No se pudo conectar con el servidor'
+  return porDefecto
+}
+
 export default api
