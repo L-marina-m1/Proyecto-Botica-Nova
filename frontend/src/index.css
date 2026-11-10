@@ -101,3 +101,15 @@ select { padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font
 .fila-detalle td { background: #f8fafc; }
 .sub-tabla { width: 100%; border-collapse: collapse; margin: 4px 0; }
 .sub-tabla th, .sub-tabla td { padding: 8px; text-align: left; border-bottom: 1px solid #e5e7eb; font-size: .9rem; }
+
+.bienvenida { background: #d1fae5; color: #065f46; padding: 12px 16px; border-radius: 10px; margin-bottom: 16px; font-weight: 600; }
+.usuario-caja { display: flex; align-items: center; gap: 10px; }
+.avatar { width: 38px; height: 38px; border-radius: 50%; background: #115e59; display: flex; align-items: center; justify-content: center; color: #fff; flex-shrink: 0; }
+.usuario-nombre { font-weight: 600; color: #fff; word-break: break-word; }
+.usuario-rol { font-size: .8rem; color: #a7f3d0; }
+.fila-inactiva { background: #f1f5f9; color: #94a3b8; }
+.badge.inactivo { background: #e2e8f0; color: #475569; }
+.badge.rol-admin { background: #dbeafe; color: #1e40af; }
+.badge.rol-trabajador { background: #fef3c7; color: #92400e; }
+.subtitulo { font-size: 1.05rem; margin: 8px 0 12px; }
+.stats-hoy .stat { background: #ecfdf5; }

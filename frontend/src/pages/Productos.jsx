@@ -3,6 +3,7 @@ import {
   listarProductos,
   crearProducto,
   actualizarProducto,
+  cambiarEstadoProducto,
   eliminarProducto,
 } from '../services/productosService'
 import { listarCategorias } from '../services/categoriasService'
@@ -29,15 +30,15 @@ export default function Productos() {
   const [mensaje, setMensaje] = useState('')
 
   useEffect(() => {
-    Promise.all([listarProductos(), listarCategorias()])
+    Promise.all([listarProductos({ todos: admin }), listarCategorias()])
       .then(([prods, cats]) => {
         setProductos(prods)
         setCategorias(cats)
       })
       .catch((err) => setError(mensajeError(err, 'No se pudieron cargar los productos')))
-  }, [])
+  }, [admin])
 
-  const recargar = async () => setProductos(await listarProductos())
+  const recargar = async () => setProductos(await listarProductos({ todos: admin }))
 
   const manejarCambio = (e) => setForm({ ...form, [e.target.name]: e.target.value })
 
@@ -90,6 +91,18 @@ export default function Productos() {
     setError('')
   }
 
+  const alternarEstado = async (p) => {
+    setError('')
+    setMensaje('')
+    try {
+      await cambiarEstadoProducto(p.id, !p.activo)
+      setMensaje(p.activo ? `"${p.nombre}" fue deshabilitado` : `"${p.nombre}" fue habilitado`)
+      await recargar()
+    } catch (err) {
+      setError(mensajeError(err, 'No se pudo cambiar el estado del producto'))
+    }
+  }
+
   const eliminar = async (p) => {
     if (!window.confirm(`¿Eliminar "${p.nombre}"?`)) return
     setError('')
@@ -139,7 +152,7 @@ export default function Productos() {
         </form>
       ) : (
         <p className="detalle" style={{ marginBottom: 16 }}>
-          Solo el administrador puede registrar, editar o eliminar productos.
+          Solo el administrador puede registrar, editar o deshabilitar productos.
         </p>
       )}
 
@@ -164,20 +177,28 @@ export default function Productos() {
         <tbody>
           {filtrados.map((p) => {
             const bajo = p.stock <= p.stock_minimo
+            const clase = !p.activo ? 'fila-inactiva' : bajo ? 'fila-bajo' : ''
             return (
-              <tr key={p.id} className={bajo ? 'fila-bajo' : ''}>
+              <tr key={p.id} className={clase}>
                 <td>{p.nombre}</td>
                 <td>{p.categoria}</td>
                 <td>S/ {Number(p.precio).toFixed(2)}</td>
                 <td>{p.stock}</td>
                 <td>
-                  <span className={bajo ? 'badge bajo' : 'badge ok'}>
-                    {bajo ? 'Bajo stock' : 'Normal'}
-                  </span>
+                  {!p.activo ? (
+                    <span className="badge inactivo">Deshabilitado</span>
+                  ) : (
+                    <span className={bajo ? 'badge bajo' : 'badge ok'}>
+                      {bajo ? 'Bajo stock' : 'Normal'}
+                    </span>
+                  )}
                 </td>
                 {admin && (
                   <td className="acciones">
                     <button className="btn" onClick={() => editar(p)}>Editar</button>
+                    <button className="btn" onClick={() => alternarEstado(p)}>
+                      {p.activo ? 'Deshabilitar' : 'Habilitar'}
+                    </button>
                     <button className="btn peligro" onClick={() => eliminar(p)}>Eliminar</button>
                   </td>
                 )}

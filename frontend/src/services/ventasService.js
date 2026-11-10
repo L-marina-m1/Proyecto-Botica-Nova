@@ -17,3 +17,8 @@ export async function obtenerVenta(id) {
   const { data } = await api.get(`/ventas/${id}`)
   return data.data
 }
+
+export async function resumenHoy() {
+  const { data } = await api.get('/ventas/resumen/hoy')
+  return data.data
+}
