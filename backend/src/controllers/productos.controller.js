@@ -26,37 +26,30 @@ const BASE = `
 
 exports.listar = asyncHandler(async (req, res) => {
 
-  const {
-    q,
-    categoria_id,
-    bajo_stock
-  } = req.query;
+  const { q, categoria_id, bajo_stock, todos } = req.query;
 
-  const condiciones = ['p.activo = 1'];
-
+  const condiciones = [];
   const parametros = [];
+
+  // Solo el administrador puede ver también los productos deshabilitados
+  const incluirInactivos = todos === 'true' && req.usuario?.rol === 'admin';
+  if (!incluirInactivos) {
+    condiciones.push('p.activo = 1');
+  }
 
   // Buscar por nombre o descripción
   if (q && q.trim()) {
-
-    condiciones.push(
-      '(p.nombre LIKE ? OR p.descripcion LIKE ?)'
-    );
-
+    condiciones.push('(p.nombre LIKE ? OR p.descripcion LIKE ?)');
     const busqueda = `%${q.trim()}%`;
-
     parametros.push(busqueda, busqueda);
   }
 
   // Filtrar por categoría
   if (categoria_id) {
-
     if (!/^\d+$/.test(categoria_id) || Number(categoria_id) < 1) {
       throw new AppError('Categoría inválida', 422);
     }
-
     condiciones.push('p.categoria_id = ?');
-
     parametros.push(Number(categoria_id));
   }
 
@@ -65,20 +58,20 @@ exports.listar = asyncHandler(async (req, res) => {
     condiciones.push('p.stock <= p.stock_minimo');
   }
 
-  const sql = `
-    ${BASE}
-    WHERE ${condiciones.join(' AND ')}
-    ORDER BY p.nombre ASC
-  `;
+  const where = condiciones.length ? `WHERE ${condiciones.join(' AND ')}` : '';
 
-  const [rows] = await pool.query(sql, parametros);
+  const [rows] = await pool.query(
+    `${BASE} ${where} ORDER BY p.nombre ASC`,
+    parametros
+  );
 
   res.json({
     ok: true,
     total: rows.length,
-    data: rows.map(producto => ({
+    data: rows.map((producto) => ({
       ...producto,
-      bajo_stock: Boolean(producto.bajo_stock)
+      bajo_stock: Boolean(producto.bajo_stock),
+      activo: Boolean(producto.activo)
     }))
   });
 
@@ -304,4 +297,22 @@ exports.eliminar = asyncHandler(async (req, res) => {
     mensaje: 'Producto eliminado correctamente'
   });
 
+});
+
+
+// PATCH /api/productos/:id/estado  { activo: true | false }
+exports.cambiarEstado = asyncHandler(async (req, res) => {
+  const { activo } = req.body;
+
+  const [productos] = await pool.query('SELECT id FROM productos WHERE id = ?', [req.params.id]);
+  if (!productos.length) {
+    throw new AppError('Producto no encontrado', 404);
+  }
+
+  await pool.query('UPDATE productos SET activo = ? WHERE id = ?', [activo ? 1 : 0, req.params.id]);
+
+  res.json({
+    ok: true,
+    mensaje: activo ? 'Producto habilitado correctamente' : 'Producto deshabilitado correctamente'
+  });
 });

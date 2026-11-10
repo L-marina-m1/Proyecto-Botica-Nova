@@ -72,3 +72,28 @@ exports.obtener = asyncHandler(async (req, res) => {
      FROM detalle_ventas d JOIN productos p ON p.id = d.producto_id WHERE d.venta_id=?`, [req.params.id]);
   res.json({ ok: true, data: { ...venta, detalle } });
 });
+
+
+// GET /api/ventas/resumen/hoy  (solo administrador)
+exports.resumenHoy = asyncHandler(async (req, res) => {
+  const [[ventas]] = await pool.query(
+    `SELECT COUNT(*) AS cantidad, COALESCE(SUM(total), 0) AS total
+     FROM ventas
+     WHERE fecha >= CURDATE() AND fecha < CURDATE() + INTERVAL 1 DAY`
+  );
+  const [[unidades]] = await pool.query(
+    `SELECT COALESCE(SUM(d.cantidad), 0) AS unidades
+     FROM detalle_ventas d
+     JOIN ventas v ON v.id = d.venta_id
+     WHERE v.fecha >= CURDATE() AND v.fecha < CURDATE() + INTERVAL 1 DAY`
+  );
+
+  res.json({
+    ok: true,
+    data: {
+      cantidad: Number(ventas.cantidad),
+      unidades: Number(unidades.unidades),
+      total: Number(ventas.total)
+    }
+  });
+});
