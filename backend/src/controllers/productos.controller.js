@@ -1,58 +1,307 @@
 const pool = require('../config/db');
-const { AppError, asyncHandler } = require('../utils/AppError');
 
-const BASE = `SELECT p.*, c.nombre AS categoria,
-  (p.stock <= p.stock_minimo) AS bajo_stock
-  FROM productos p JOIN categorias c ON c.id = p.categoria_id`;
+const {
+  AppError,
+  asyncHandler
+} = require('../utils/AppError');
 
-// GET /api/productos?q=para&categoria_id=1&bajo_stock=true
+// ==========================================
+// CONSULTA BASE
+// ==========================================
+
+const BASE = `
+  SELECT
+    p.*,
+    c.nombre AS categoria,
+    (p.stock <= p.stock_minimo) AS bajo_stock
+  FROM productos p
+  INNER JOIN categorias c ON c.id = p.categoria_id
+`;
+
+
+// ==========================================
+// LISTAR PRODUCTOS
+// GET /api/productos
+// ==========================================
+
 exports.listar = asyncHandler(async (req, res) => {
-  const { q, categoria_id, bajo_stock } = req.query;
-  const where = ['p.activo = 1'];
-  const params = [];
-  if (q) { where.push('(p.nombre LIKE ? OR p.descripcion LIKE ?)'); params.push(`%${q}%`, `%${q}%`); }
-  if (categoria_id) { where.push('p.categoria_id = ?'); params.push(categoria_id); }
-  if (bajo_stock === 'true') where.push('p.stock <= p.stock_minimo');
-  const [rows] = await pool.query(`${BASE} WHERE ${where.join(' AND ')} ORDER BY p.nombre`, params);
-  res.json({ ok: true, total: rows.length, data: rows.map((r) => ({ ...r, bajo_stock: !!r.bajo_stock })) });
+
+  const {
+    q,
+    categoria_id,
+    bajo_stock
+  } = req.query;
+
+  const condiciones = ['p.activo = 1'];
+
+  const parametros = [];
+
+  // Buscar por nombre o descripción
+  if (q && q.trim()) {
+
+    condiciones.push(
+      '(p.nombre LIKE ? OR p.descripcion LIKE ?)'
+    );
+
+    const busqueda = `%${q.trim()}%`;
+
+    parametros.push(busqueda, busqueda);
+  }
+
+  // Filtrar por categoría
+  if (categoria_id) {
+
+    if (!/^\d+$/.test(categoria_id) || Number(categoria_id) < 1) {
+      throw new AppError('Categoría inválida', 422);
+    }
+
+    condiciones.push('p.categoria_id = ?');
+
+    parametros.push(Number(categoria_id));
+  }
+
+  // Filtrar productos con bajo stock
+  if (bajo_stock === 'true') {
+    condiciones.push('p.stock <= p.stock_minimo');
+  }
+
+  const sql = `
+    ${BASE}
+    WHERE ${condiciones.join(' AND ')}
+    ORDER BY p.nombre ASC
+  `;
+
+  const [rows] = await pool.query(sql, parametros);
+
+  res.json({
+    ok: true,
+    total: rows.length,
+    data: rows.map(producto => ({
+      ...producto,
+      bajo_stock: Boolean(producto.bajo_stock)
+    }))
+  });
+
 });
+
+
+// ==========================================
+// OBTENER PRODUCTO
+// GET /api/productos/:id
+// ==========================================
 
 exports.obtener = asyncHandler(async (req, res) => {
-  const [rows] = await pool.query(`${BASE} WHERE p.id = ? AND p.activo = 1`, [req.params.id]);
-  if (!rows[0]) throw new AppError('Producto no encontrado', 404);
-  res.json({ ok: true, data: { ...rows[0], bajo_stock: !!rows[0].bajo_stock } });
+
+  const [rows] = await pool.query(
+    `${BASE}
+     WHERE p.id = ?
+     AND p.activo = 1`,
+    [req.params.id]
+  );
+
+  if (!rows.length) {
+    throw new AppError('Producto no encontrado', 404);
+  }
+
+  const producto = rows[0];
+
+  res.json({
+    ok: true,
+    data: {
+      ...producto,
+      bajo_stock: Boolean(producto.bajo_stock)
+    }
+  });
+
 });
+
+
+// ==========================================
+// CREAR PRODUCTO
+// POST /api/productos
+// ==========================================
 
 exports.crear = asyncHandler(async (req, res) => {
-  const { nombre, descripcion = null, categoria_id, precio, stock = 0, stock_minimo = 5 } = req.body;
-  const [r] = await pool.query(
-    'INSERT INTO productos (nombre, descripcion, categoria_id, precio, stock, stock_minimo) VALUES (?,?,?,?,?,?)',
-    [nombre, descripcion, categoria_id, precio, stock, stock_minimo]
+
+  const {
+    nombre,
+    descripcion = null,
+    categoria_id,
+    precio,
+    stock = 0,
+    stock_minimo = 5
+  } = req.body;
+
+  const [resultado] = await pool.query(
+    `INSERT INTO productos
+      (
+        nombre,
+        descripcion,
+        categoria_id,
+        precio,
+        stock,
+        stock_minimo
+      )
+     VALUES (?, ?, ?, ?, ?, ?)`,
+    [
+      nombre,
+      descripcion,
+      categoria_id,
+      precio,
+      stock,
+      stock_minimo
+    ]
   );
-  res.status(201).json({ ok: true, mensaje: 'Producto registrado', id: r.insertId });
+
+  res.status(201).json({
+    ok: true,
+    mensaje: 'Producto registrado correctamente',
+    id: resultado.insertId
+  });
+
 });
+
+
+// ==========================================
+// ACTUALIZAR PRODUCTO
+// PUT /api/productos/:id
+// ==========================================
 
 exports.actualizar = asyncHandler(async (req, res) => {
-  const { nombre, descripcion = null, categoria_id, precio, stock, stock_minimo } = req.body;
-  const [r] = await pool.query(
-    `UPDATE productos SET nombre=?, descripcion=?, categoria_id=?, precio=?, stock=?, stock_minimo=?
-     WHERE id=? AND activo=1`,
-    [nombre, descripcion, categoria_id, precio, stock, stock_minimo, req.params.id]
+
+  const id = req.params.id;
+
+  const {
+    nombre,
+    descripcion,
+    categoria_id,
+    precio,
+    stock,
+    stock_minimo
+  } = req.body;
+
+  // Verificar existencia
+  const [productos] = await pool.query(
+    `SELECT id
+     FROM productos
+     WHERE id = ? AND activo = 1`,
+    [id]
   );
-  if (!r.affectedRows) throw new AppError('Producto no encontrado', 404);
-  res.json({ ok: true, mensaje: 'Producto actualizado' });
+
+  if (!productos.length) {
+    throw new AppError('Producto no encontrado', 404);
+  }
+
+  // Actualizar únicamente los campos enviados
+  const campos = [];
+  const valores = [];
+
+  if (nombre !== undefined) {
+    campos.push('nombre = ?');
+    valores.push(nombre);
+  }
+
+  if (Object.prototype.hasOwnProperty.call(req.body, 'descripcion')) {
+    campos.push('descripcion = ?');
+    valores.push(descripcion);
+  }
+
+  if (categoria_id !== undefined) {
+    campos.push('categoria_id = ?');
+    valores.push(categoria_id);
+  }
+
+  if (precio !== undefined) {
+    campos.push('precio = ?');
+    valores.push(precio);
+  }
+
+  if (stock !== undefined) {
+    campos.push('stock = ?');
+    valores.push(stock);
+  }
+
+  if (stock_minimo !== undefined) {
+    campos.push('stock_minimo = ?');
+    valores.push(stock_minimo);
+  }
+
+  if (!campos.length) {
+    throw new AppError('No se enviaron datos para actualizar', 400);
+  }
+
+  valores.push(id);
+
+  await pool.query(
+    `UPDATE productos
+     SET ${campos.join(', ')}
+     WHERE id = ? AND activo = 1`,
+    valores
+  );
+
+  res.json({
+    ok: true,
+    mensaje: 'Producto actualizado correctamente'
+  });
+
 });
 
-// Si el producto ya tiene ventas se desactiva (soft delete) para no perder el historial.
+
+// ==========================================
+// ELIMINAR PRODUCTO
+// DELETE /api/productos/:id
+// ==========================================
+
 exports.eliminar = asyncHandler(async (req, res) => {
+
   const id = req.params.id;
-  const [[uso]] = await pool.query('SELECT COUNT(*) AS n FROM detalle_ventas WHERE producto_id=?', [id]);
-  if (uso.n) {
-    const [r] = await pool.query('UPDATE productos SET activo=0 WHERE id=?', [id]);
-    if (!r.affectedRows) throw new AppError('Producto no encontrado', 404);
-    return res.json({ ok: true, mensaje: 'Producto desactivado (tiene ventas registradas)' });
+
+  // Verificar existencia
+  const [productos] = await pool.query(
+    `SELECT id
+     FROM productos
+     WHERE id = ? AND activo = 1`,
+    [id]
+  );
+
+  if (!productos.length) {
+    throw new AppError('Producto no encontrado', 404);
   }
-  const [r] = await pool.query('DELETE FROM productos WHERE id=?', [id]);
-  if (!r.affectedRows) throw new AppError('Producto no encontrado', 404);
-  res.json({ ok: true, mensaje: 'Producto eliminado' });
+
+  // Comprobar si tiene ventas asociadas
+  const [[uso]] = await pool.query(
+    `SELECT COUNT(*) AS cantidad
+     FROM detalle_ventas
+     WHERE producto_id = ?`,
+    [id]
+  );
+
+  if (uso.cantidad > 0) {
+
+    // Desactivar sin perder historial
+    await pool.query(
+      `UPDATE productos
+       SET activo = 0
+       WHERE id = ?`,
+      [id]
+    );
+
+    return res.json({
+      ok: true,
+      mensaje: 'Producto desactivado correctamente porque tiene ventas registradas'
+    });
+
+  }
+
+  // Si no tiene ventas, eliminar definitivamente
+  await pool.query(
+    'DELETE FROM productos WHERE id = ?',
+    [id]
+  );
+
+  res.json({
+    ok: true,
+    mensaje: 'Producto eliminado correctamente'
+  });
+
 });
