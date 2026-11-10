@@ -38,6 +38,7 @@ export default function Layout() {
           <NavLink to="/" end>Panel principal</NavLink>
           <NavLink to="/productos">Productos</NavLink>
           <NavLink to="/ventas">Ventas</NavLink>
+          <NavLink to="/historial">Historial de ventas</NavLink>
           <NavLink to="/alertas">Alertas de stock</NavLink>
         </nav>
         <div className="sidebar-pie">

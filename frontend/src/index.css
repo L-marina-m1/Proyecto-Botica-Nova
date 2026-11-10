@@ -90,3 +90,14 @@ input { padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-
   .linea-carrito { flex-direction: column; align-items: stretch; }
   .alerta { flex-direction: column; align-items: flex-start; }
 }
+
+
+select { padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: .95rem; width: 100%; background: #fff; }
+.badge.agotado { background: #7f1d1d; color: #fff; }
+.aviso { background: #fef3c7; color: #92400e; padding: 10px 14px; border-radius: 8px; margin-bottom: 16px; }
+.aviso ul { margin: 6px 0 0 18px; }
+.carrito input { margin-bottom: 8px; }
+.resumen { display: flex; gap: 24px; flex-wrap: wrap; margin-bottom: 16px; color: #64748b; }
+.fila-detalle td { background: #f8fafc; }
+.sub-tabla { width: 100%; border-collapse: collapse; margin: 4px 0; }
+.sub-tabla th, .sub-tabla td { padding: 8px; text-align: left; border-bottom: 1px solid #e5e7eb; font-size: .9rem; }

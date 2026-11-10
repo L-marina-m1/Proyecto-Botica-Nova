@@ -1,22 +1,26 @@
 import { useEffect, useState } from 'react'
 import { listarProductos } from '../services/productosService'
 import { registrarVenta } from '../services/ventasService'
+import { mensajeError } from '../services/api'
 
 export default function Ventas() {
   const [productos, setProductos] = useState([])
   const [busqueda, setBusqueda] = useState('')
   const [carrito, setCarrito] = useState([])
+  const [cliente, setCliente] = useState('')
   const [mensaje, setMensaje] = useState('')
+  const [avisos, setAvisos] = useState([])
   const [error, setError] = useState('')
 
   useEffect(() => {
     listarProductos()
       .then(setProductos)
-      .catch(() => setError('No se pudieron cargar los productos'))
+      .catch((err) => setError(mensajeError(err, 'No se pudieron cargar los productos')))
   }, [])
 
   const agregar = (p) => {
     setMensaje('')
+    setAvisos([])
     setError('')
     setCarrito((actual) => {
       const existente = actual.find((i) => i.id === p.id)
@@ -50,13 +54,17 @@ export default function Ventas() {
   const confirmar = async () => {
     if (carrito.length === 0) return
     setError('')
+    setMensaje('')
+    setAvisos([])
     try {
-      await registrarVenta(carrito)
-      setMensaje(`Venta registrada correctamente. Total: S/ ${total.toFixed(2)}`)
+      const res = await registrarVenta(carrito, cliente.trim())
+      setMensaje(`Venta registrada correctamente. Total: S/ ${Number(res.venta.total).toFixed(2)}`)
+      setAvisos(res.alertas || [])
       setCarrito([])
+      setCliente('')
       setProductos(await listarProductos())
-    } catch {
-      setError('No se pudo registrar la venta')
+    } catch (err) {
+      setError(mensajeError(err, 'No se pudo registrar la venta'))
     }
   }
 
@@ -68,6 +76,18 @@ export default function Ventas() {
     <div>
       <h1>Ventas</h1>
       {mensaje && <p className="exito">{mensaje}</p>}
+      {avisos.length > 0 && (
+        <div className="aviso">
+          <strong>Reposición necesaria:</strong>
+          <ul>
+            {avisos.map((a) => (
+              <li key={a.producto_id}>
+                {a.nombre}: quedan {a.stock} (mínimo {a.stock_minimo})
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
       {error && <p className="error">{error}</p>}
 
       <div className="ventas-grid">
@@ -102,6 +122,12 @@ export default function Ventas() {
 
         <aside className="card carrito">
           <h2>Carrito</h2>
+          <input
+            placeholder="Cliente (opcional)"
+            value={cliente}
+            onChange={(e) => setCliente(e.target.value)}
+            maxLength={120}
+          />
           {carrito.length === 0 && <p className="detalle">Aún no hay productos.</p>}
           {carrito.map((i) => (
             <div key={i.id} className="linea-carrito">

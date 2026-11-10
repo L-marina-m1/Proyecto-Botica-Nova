@@ -7,3 +7,13 @@ export async function registrarVenta(items, cliente) {
   })
   return data
 }
+
+export async function listarVentas() {
+  const { data } = await api.get('/ventas')
+  return data.data
+}
+
+export async function obtenerVenta(id) {
+  const { data } = await api.get(`/ventas/${id}`)
+  return data.data
+}
