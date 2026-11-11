@@ -109,69 +109,45 @@ Antes de iniciar el backend, es necesario preparar la base de datos.
 
 ---
 
-#6. Instalación y configuración del backend
-
-El backend requiere la instalación de sus dependencias y la configuración de las variables de entorno para establecer la conexión con la base de datos y los servicios de autenticación.
-
-##6.1. Para Windows (PowerShell)
+# 6. Instalación y configuración del backend
 
 Abrir una terminal de PowerShell desde la carpeta principal del proyecto.
 
 Ingresar a la carpeta del backend:
 
-powershell
+```powershell
 cd backend
-
+```
 
 Instalar las dependencias:
 
-powershell
+```powershell
 npm install
-
+```
 
 Crear el archivo de configuración local:
 
-powershell
+Para Windows:
+
+```powershell
 Copy-Item .env.example .env
+```
 
+Para Linux:
 
-Abrir el archivo .env:
-
-powershell
-code .env
-
-6.2. Para Ubuntu Linux (Terminal)
-
-Abrir una terminal desde la carpeta principal del proyecto.
-
-Ingresar a la carpeta del backend:
-
-bash
-cd backend
-
-
-Instalar las dependencias:
-
-bash
-npm install
-
-
-Crear el archivo de configuración local:
-
-bash
+```powershell
 cp .env.example .env
+```
 
+Abrir el archivo `.env`:
 
-Abrir el archivo .env:
-
-bash
+```powershell
 code .env
+```
 
-##6.3. Configuración de las variables de entorno
+Configurar las variables de entorno con los datos correspondientes a la computadora donde se ejecutará el proyecto:
 
-En ambos sistemas operativos, configurar el archivo .env con los datos correspondientes a la computadora donde se ejecutará el proyecto:
-
-env
+```env
 PORT=3000
 
 DB_HOST=localhost
@@ -187,17 +163,7 @@ CORS_ORIGIN=*
 
 ADMIN_EMAIL=admin@botica.com
 ADMIN_PASSWORD=COLOCAR_UNA_CONTRASENA_SEGURA
-
-
-Guardar los cambios realizados en el archivo .env.
-
-Consideraciones:
-
-Generar una clave JWT aleatoria, larga y privada.
-Configurar una contraseña segura para el administrador.
-No publicar el archivo .env en GitHub.
-Mantener .env.example sin credenciales reales.
-Verificar que los datos de conexión a MySQL correspondan a la configuración de cada computadora.
+```
 
 ### Descripción de las variables
 
